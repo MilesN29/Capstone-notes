@@ -97,6 +97,23 @@
       loop_control:
         label: "{{ hlq }}.{{ mlq }}.{{ item }}"
 
+    - name: Verify COBOL members
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "LISTDS '{{ hlq }}.DEV.COBOL' MEMBERS"
+      register: cobol
+
+    - name: Verify JCL members
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "LISTDS '{{ hlq }}.DEV.JCL' MEMBERS"
+      register: jcl
+
+    - debug:
+        var: cobol.output
+    - debug:
+        var: jcl.output
+
     - name: Report provisioned datasets
       ansible.builtin.debug:
         msg: "Provisioned: {{ hlq }}.{{ item.mlq }}.{{ item.libname }}"
