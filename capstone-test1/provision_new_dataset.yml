@@ -102,17 +102,28 @@
         commands:
           - "LISTDS '{{ hlq }}.DEV.COBOL' MEMBERS"
       register: cobol
+      tags:
+        - verify
 
     - name: Verify JCL members
       ibm.ibm_zos_core.zos_tso_command:
         commands:
           - "LISTDS '{{ hlq }}.DEV.JCL' MEMBERS"
       register: jcl
+      tags:
+        - verify
 
-    - debug:
+    - name: Show COBOL members
+      ansible.builtin.debug:
         var: cobol.output
-    - debug:
+      tags:
+        - verify
+
+    - name: Show JCL members
+      ansible.builtin.debug:
         var: jcl.output
+      tags:
+        - verify
 
     - name: Report provisioned datasets
       ansible.builtin.debug:
