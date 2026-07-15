@@ -27,6 +27,7 @@
     hlq: "{{ userid }}"
     mlq: DEV
     seed_base: "{{ playbook_dir }}/seed_files"
+    rebuild: false
 
     libraries:
       - mlq: DEV
@@ -59,11 +60,12 @@
           A valid userid must be passed on the command line:
           ansible-playbook job1.yml -e "userid=<USER07|USER08|USER09>"
 
-    - name: Delete existing dataset
+    - name: Delete existing datasets only rebuild is requested
       ibm.ibm_zos_core.zos_data_set:
         name: "{{ hlq }}.{{ item.mlq }}.{{ item.libname }}"
         state: absent
       loop: "{{ libraries }}"
+      when: rebuild | bool
       loop_control:
         label: "{{ hlq }}.{{ item.mlq }}.{{ item.libname }}"
 
