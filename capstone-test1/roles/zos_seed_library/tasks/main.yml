@@ -12,7 +12,12 @@
     recurse: false
     file_type: file
   delegate_to: localhost
-  register: member_files
+  register: member_files_all
+
+- name: Limit to one member when testing
+  ansible.builtin.set_fact:
+    member_files: >-
+      {{ member_files_all | combine({'files': member_files_all.files[:1]}) if (seed_limit | default(false)) else member_files_all }}
 
 # debug
 - name: Show members found
