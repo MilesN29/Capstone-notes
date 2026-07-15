@@ -1,36 +1,49 @@
 ---
-# Provision DEV/TST source libraries for a z/OS user.
+# Provision and seed DEV/TST source libraries for a z/OS user.
 #
 # Usage:
 #   ansible-playbook job1.yml -e "userid=<USER07|USER08|USER09>"
 #
-# Creates the following datasets for the specified user:
+# Creates:
 #   <userid>.DEV.COBOL
 #   <userid>.DEV.JCL
 #   <userid>.TST.COBOL
 #   <userid>.TST.JCL
+#
+# Seeds:
+#   <userid>.DEV.COBOL
+#   <userid>.DEV.JCL
 
 - name: Provision developer datasets on z/OS
   hosts: zoslab
   gather_facts: false
+
   collections:
     - ibm.ibm_zos_core
+
   environment: "{{ environment_vars }}"
+
   vars:
     hlq: "{{ userid }}"
+    mlq: DEV
+    seed_base: "{{ playbook_dir }}/seed_files"
+
     libraries:
       - mlq: DEV
         libname: COBOL
         primary_allocation: 5
         secondary_allocation: 5
+
       - mlq: DEV
         libname: JCL
         primary_allocation: 2
         secondary_allocation: 4
+
       - mlq: TST
         libname: COBOL
         primary_allocation: 5
         secondary_allocation: 5
+
       - mlq: TST
         libname: JCL
         primary_allocation: 2
@@ -46,7 +59,7 @@
           A valid userid must be passed on the command line:
           ansible-playbook job1.yml -e "userid=<USER07|USER08|USER09>"
 
-    - name: Delete existing dataset 
+    - name: Delete existing dataset
       ibm.ibm_zos_core.zos_data_set:
         name: "{{ hlq }}.{{ item.mlq }}.{{ item.libname }}"
         state: absent
@@ -69,7 +82,20 @@
       loop_control:
         label: "{{ hlq }}.{{ item.mlq }}.{{ item.libname }}"
 
-    # TODO: Add members to the dataset
+    - name: Warm up remote session
+      ansible.builtin.command: /bin/true
+      changed_when: false
+
+    - name: Seed DEV COBOL and JCL libraries
+      ansible.builtin.include_role:
+        name: zos_seed_library
+      vars:
+        library: "{{ item }}"
+      loop:
+        - COBOL
+        - JCL
+      loop_control:
+        label: "{{ hlq }}.{{ mlq }}.{{ item }}"
 
     - name: Report provisioned datasets
       ansible.builtin.debug:
