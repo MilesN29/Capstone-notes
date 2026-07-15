@@ -2,9 +2,7 @@
 # Provision DEV/TST source libraries for a z/OS user.
 #
 # Usage:
-#   ansible-playbook job1.yml -e "userid=USER07"
-#   ansible-playbook job1.yml -e "userid=USER08"
-#   ansible-playbook job1.yml -e "userid=USER09"
+#   ansible-playbook job1.yml -e "userid=<USER07|USER08|USER09>"
 #
 # Creates the following datasets for the specified user:
 #   <userid>.DEV.COBOL
@@ -39,17 +37,16 @@
         secondary_allocation: 4
 
   tasks:
-    - name: Validate userid is provided and is an allowed user
+    - name: Validate userid is provided and is allowed
       ansible.builtin.assert:
         that:
           - userid is defined
           - userid in ['USER07', 'USER08', 'USER09']
         fail_msg: >
           A valid userid must be passed on the command line:
-          ansible-playbook job1.yml -e "userid=USER07"
-          Allowed values: USER07, USER08, USER09
+          ansible-playbook job1.yml -e "userid=<USER07|USER08|USER09>"
 
-    - name: Delete existing dataset (if present)
+    - name: Delete existing dataset 
       ibm.ibm_zos_core.zos_data_set:
         name: "{{ hlq }}.{{ item.mlq }}.{{ item.libname }}"
         state: absent
@@ -71,6 +68,8 @@
       loop: "{{ libraries }}"
       loop_control:
         label: "{{ hlq }}.{{ item.mlq }}.{{ item.libname }}"
+
+    # TODO: Add members to the dataset
 
     - name: Report provisioned datasets
       ansible.builtin.debug:
