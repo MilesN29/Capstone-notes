@@ -43,4 +43,4 @@ jobs:
 
       - name: Run Ansible lint
         run: |
-          ansible-lint capstone-test1/provision_new_dataset.yml roles/
+          ansible-lint capstone-test1/provision_new_dataset.yml capstone-test1/roles/
