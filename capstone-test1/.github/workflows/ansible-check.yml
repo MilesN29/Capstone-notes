@@ -1,0 +1,50 @@
+---
+name: Ansible Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  
+jobs:
+  validate:
+    name: Validate Ansible
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible ansible-lint yamllint
+
+      - name: Install IBM z/OS collection
+        run: |
+          ansible-galaxy collection install ibm.ibm_zos_core
+
+      - name: Check YAML syntax
+        run: |
+          yamllint .
+
+      - name: Check Ansible playbook syntax
+        run: |
+          ansible-playbook provision_new_dataset.yml \
+            --syntax-check \
+            -e "userid=USER08"
+
+      - name: Run Ansible lint
+        run: |
+          ansible-lint provision_new_dataset.yml roles/
