@@ -1,8 +1,8 @@
 ---
-# debug 
+# debug
 - name: Show destination
   debug:
-    msg: 
+    msg:
       "{{ hlq }}.{{ mlq }}.{{ library }}({{ member.path | basename | splitext | first | upper }})"
 # end debug
 
@@ -24,5 +24,4 @@
       ansible.builtin.debug:
         msg: >
           FAILED: "{{ member.path | basename }}" -> "{{ hlq }}.{{ mlq }}.{{ library }}"
-          Reason: "{{ ansible_failed_result.msg }}     
-
+          Reason: "{{ ansible_failed_result.msg }}

@@ -5,7 +5,7 @@
   ansible.builtin.debug:
     var: library
 # end debug
-     
+
 - name: Find members for {{ library }}
   ansible.builtin.find:
     paths: "{{ seed_base }}/{{ library }}"
@@ -23,7 +23,7 @@
 - name: Show members found
   ansible.builtin.debug:
     var: member_files.files
-# end debug    
+# end debug
 
 - name: Copy members
   ansible.builtin.include_tasks: copy_members.yml
