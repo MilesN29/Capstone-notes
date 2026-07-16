@@ -1,0 +1,40 @@
+---
+- name: Submit ASCII Art JCL
+  hosts: zoslab
+  gather_facts: false
+  environment: "{{ environment_vars }}"
+
+  tasks:
+    - name: Copy drawing script to USS
+      ibm.ibm_zos_core.zos_copy:
+        src: "{{ playbook_dir }}/scripts/drawing.sh"
+        dest: /u/gama18/drawing.sh
+        remote_src: false
+        force: true
+        encoding:
+          from: UTF-8
+          to: IBM-1047
+
+    - name: Submit JCL
+      ibm.ibm_zos_core.zos_job_submit:
+        src: "{{ playbook_dir }}/jcl/drawing.jcl"
+        location: LOCAL
+        wait_time_s: 60
+        return_output: true
+      register: job
+
+    - name: Show job ID and return code
+      ansible.builtin.debug:
+        msg: >-
+          Job {{ job.jobs[0].job_id }}
+          completed RC={{ job.jobs[0].ret_code.msg_code }}
+
+    - name: Retrieve ASCII art output
+      ibm.ibm_zos_core.zos_job_output:
+        job_id: "{{ job.jobs[0].job_id }}"
+        ddname: STDOUT
+      register: ascii_output
+
+    - name: Show ASCII art
+      ansible.builtin.debug:
+        var: ascii_output.jobs[0].ddnames
