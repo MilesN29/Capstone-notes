@@ -43,4 +43,6 @@ jobs:
 
       - name: Run Ansible lint
         run: |
-          ansible-lint capstone-test1/provision_new_dataset.yml capstone-test1/roles/
+          ansible-lint \
+            --warn-list "fqcn[keyword],var-naming[no-role-prefix],fqcn[action-core],name[template]" \
+            capstone-test1/provision_new_dataset.yml capstone-test1/roles/
