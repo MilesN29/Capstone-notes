@@ -41,6 +41,8 @@ jobs:
             --syntax-check \
             -e "userid=USER08"
 
+          ansible-playbook lab44/racf_group_sandbox.yml --syntax-check
+
       - name: Run Ansible lint
         run: |
           ansible-lint \
