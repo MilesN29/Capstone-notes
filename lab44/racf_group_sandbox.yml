@@ -177,22 +177,3 @@
     - name: Display RACF group report
       ansible.builtin.debug:
         var: racf_group_report
-
-    # Reverse order again for cleanup.
-    - name: Delete RACF groups
-      ibm.ibm_zos_core.zos_tso_command:
-        commands:
-          - "DELGROUP {{ item.identity.name }}"
-      loop: "{{ racf_groups | reverse | list }}"
-      loop_control:
-        label: "{{ item.identity.name }}"
-      register: delgroup_results
-
-    - name: Show DELGROUP results
-      ansible.builtin.debug:
-        msg:
-          group: "{{ item.item.identity.name }}"
-          output: "{{ item.output }}"
-      loop: "{{ delgroup_results.results }}"
-      loop_control:
-        label: "{{ item.item.identity.name }}"
