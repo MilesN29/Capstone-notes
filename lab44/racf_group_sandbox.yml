@@ -9,6 +9,16 @@
   environment: "{{ environment_vars }}"
 
   vars:
+
+    users:
+      D03GPT:
+        - U03D01
+        - U03D02
+      T03GPT:
+        - U03T01
+      P03PTG:
+        - U03PTU
+
     racf_groups:
       - identity:
           name: D03GRP
@@ -85,6 +95,28 @@
       ansible.builtin.debug:
         var: racf_groups
 
+    - name: Delete existing users
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "DELUSER {{ item.1 }}"
+      loop: "{{ users | dict2items | subelements('value') }}" # loop over users using key as groups to be added and value as users to be added
+      loop_control:
+        label: "{{ item.1 }}"
+      register: deluser_results
+      failed_when: false
+
+    - name: Show user deletion results
+      ansible.builtin.debug:
+        msg:
+          user: "{{ item.item.1 }}"
+          output: "{{ item.output | default([]) }}"
+          message: "{{ item.msg | default('') }}"
+          failed: "{{ item.failed | default(false) }}"
+          changed: "{{ item.changed | default(false) }}"
+      loop: "{{ deluser_results.results }}"
+      loop_control:
+        label: "{{ item.item.1 }}"
+
     # Reverse order because child groups must be deleted before parents.
     - name: Delete RACF groups if they already exist
       ibm.ibm_zos_core.zos_tso_command:
@@ -138,6 +170,56 @@
         label: "{{ item.identity.name }}"
       register: listgrp_results
 
+    - name: Create users
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "ADDUSER {{ item.1 }} PASSWORD({{ item.1 }}) OWNER(GAMA18)"
+          - "ALTUSER {{ item.1 }} TSO(ACCTNUM(ACCT001) PROC(DB13PROC) SIZE(2096128))"
+      loop: "{{ users | dict2items | subelements('value') }}" # loop over users using key as groups to be added and value as users to be added
+      loop_control:
+        label: "{{ item.1 }}"
+      register: adduser_results
+      failed_when: false
+
+    - name: Show ADDUSER results
+      ansible.builtin.debug:
+        msg:
+          user: "{{ item.item.1 }}"
+          output: "{{ item.output }}"
+      loop: "{{ adduser_results.results }}"
+      loop_control:
+        label: "{{ item.item.1 }}"
+
+    - name: Connect users to required groups
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "CONNECT {{ item.1 }} GROUP({{ item.0.key }})"
+      loop: "{{ users | dict2items | subelements('value') }}"
+      loop_control:
+        label: "{{ item.1 }} -> {{ item.0.key }}"
+      register: connect_results
+      failed_when: false
+
+    - name: Show CONNECT results
+      ansible.builtin.debug:
+        msg:
+          membership: "{{ item.item.1 }} -> {{ item.item.0.key }}"
+          output: "{{ item.output | default([]) }}"
+          message: "{{ item.msg | default('') }}"
+          failed: "{{ item.failed | default(false) }}"
+          changed: "{{ item.changed | default(false) }}"
+      loop: "{{ connect_results.results }}"
+      loop_control:
+        label: "{{ item.item.1 }} -> {{ item.item.0.key }}"
+
+    - name: Verify users
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "LISTUSER {{ item.1 }}"
+      loop: "{{ users | dict2items | subelements('value') }}"
+      loop_control:
+        label: "{{ item.1 }}"
+
     - name: Show LISTGRP results
       ansible.builtin.debug:
         msg:
@@ -176,5 +258,4 @@
 
     - name: Display RACF group report
       ansible.builtin.debug:
-        var: racf_group_report
         var: racf_group_report
