@@ -7,10 +7,26 @@
 
   vars:
     racf_group:
-      name: D03GRP
-      owner: GAMA18
-      superior_group: SYS1
-      gid: 8031
+      identity:
+        name: D03GRP
+
+      hierarchy:
+        owner: GAMA18
+        superior_group: SYS1
+
+      omvs:
+        gid: 8031
+
+      installation_data: ""
+
+      model_data_set: ""
+
+      metadata:
+        created: ""
+
+      subgroups: []
+
+      connected_users: []
 
   tasks:
     - name: Display RACF group definition
@@ -21,10 +37,10 @@
       ibm.ibm_zos_core.zos_tso_command:
         commands:
           - >-
-            ADDGROUP {{ racf_group.name }}
-            OWNER({{ racf_group.owner }})
-            SUPGROUP({{ racf_group.superior_group }})
-            OMVS(GID({{ racf_group.gid }}))
+            ADDGROUP {{ racf_group.identity.name }}
+            OWNER({{ racf_group.hierarchy.owner }})
+            SUPGROUP({{ racf_group.hierarchy.superior_group }})
+            OMVS(GID({{ racf_group.omvs.gid }}))
       register: addgroup_result
 
     - name: Show ADDGROUP result
@@ -34,17 +50,33 @@
     - name: Verify RACF group
       ibm.ibm_zos_core.zos_tso_command:
         commands:
-          - "LISTGRP {{ racf_group.name }}"
+          - "LISTGRP {{ racf_group.identity.name }}"
       register: listgrp_result
 
     - name: Show LISTGRP result
       ansible.builtin.debug:
         var: listgrp_result.output
 
+    - name: Extract created date
+      ansible.builtin.set_fact:
+        created_date: >-
+          {{
+            (listgrp_result.output[0].content | join(' '))
+            | regex_search('CREATED=([0-9.]+)', '\1')
+          }}
+
+    - name: Display RACF information
+      ansible.builtin.debug:
+        msg:
+          created: "{{ created_date }}"
+          installation_data: "{{ racf_group.installation_data }}"
+          subgroups: "{{ racf_group.subgroups }}"
+          connected_users: "{{ racf_group.connected_users }}"
+
     - name: Delete RACF group
       ibm.ibm_zos_core.zos_tso_command:
         commands:
-          - "DELGROUP {{ racf_group.name }}"
+          - "DELGROUP {{ racf_group.identity.name }}"
       register: delgroup_result
 
     - name: Show DELGROUP result
