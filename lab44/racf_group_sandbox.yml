@@ -1,0 +1,50 @@
+---
+- name: Experiment with RACF group commands
+  hosts: zoslab
+  gather_facts: false
+
+  environment: "{{ environment_vars }}"
+
+  vars:
+    racf_group:
+      name: D03GRP
+      owner: GAMA18
+      superior_group: SYS1
+
+  tasks:
+    - name: Display RACF group definition
+      ansible.builtin.debug:
+        var: racf_group
+
+    - name: Create RACF group
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - >-
+            ADDGROUP {{ racf_group.name }}
+            OWNER({{ racf_group.owner }})
+            SUPGROUP({{ racf_group.superior_group }})
+      register: addgroup_result
+
+    - name: Show ADDGROUP result
+      ansible.builtin.debug:
+        var: addgroup_result.output
+
+    - name: Verify RACF group
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "LISTGRP {{ racf_group.name }}"
+      register: listgrp_result
+
+    - name: Show LISTGRP result
+      ansible.builtin.debug:
+        var: listgrp_result.output
+
+    - name: Delete RACF group
+      ibm.ibm_zos_core.zos_tso_command:
+        commands:
+          - "DELGROUP {{ racf_group.name }}"
+      register: delgroup_result
+
+    - name: Show DELGROUP result
+      ansible.builtin.debug:
+        var: delgroup_result.output
