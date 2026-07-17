@@ -10,6 +10,7 @@
       name: D03GRP
       owner: GAMA18
       superior_group: SYS1
+      gid: 8031
 
   tasks:
     - name: Display RACF group definition
@@ -23,6 +24,7 @@
             ADDGROUP {{ racf_group.name }}
             OWNER({{ racf_group.owner }})
             SUPGROUP({{ racf_group.superior_group }})
+            OMVS(GID({{ racf_group.gid }}))
       register: addgroup_result
 
     - name: Show ADDGROUP result
