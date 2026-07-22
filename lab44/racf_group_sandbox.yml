@@ -10,11 +10,6 @@
 
   vars:
 
-    database_profile:
-      name: "U03D01.**"
-      owner: U03D01
-      universal_access: NONE
-
     users:
       D03GPT:
         - U03D01
@@ -99,24 +94,6 @@
     - name: Display RACF group definitions
       ansible.builtin.debug:
         var: racf_groups
-
-    - name: Delete generic database profile if it exists
-      ibm.ibm_zos_core.zos_tso_command:
-        commands:
-          - >-
-            DELDSD '{{ database_profile.name }}'
-            GENERIC
-        max_rc: 8
-      register: deldsd_result
-      failed_when: false
-
-    - name: Show DELDSD result
-      ansible.builtin.debug:
-        msg:
-          profile: "{{ database_profile.name }}"
-          output: "{{ deldsd_result.output | default([]) }}"
-          message: "{{ deldsd_result.msg | default('') }}"
-          failed: "{{ deldsd_result.failed | default(false) }}"
 
     - name: Delete existing users
       ibm.ibm_zos_core.zos_tso_command:
@@ -237,55 +214,6 @@
         label: "{{ item.identity.name }}"
       register: listgrp_results
 
-    - name: Create generic database profile
-      ibm.ibm_zos_core.zos_tso_command:
-        commands:
-          - >-
-            ADDSD '{{ database_profile.name }}'
-            GENERIC
-            OWNER({{ database_profile.owner }})
-            UACC({{ database_profile.universal_access }})
-      register: addsd_result
-
-    - name: Show ADDSD result
-      ansible.builtin.debug:
-        msg:
-          profile: "{{ database_profile.name }}"
-          output: "{{ addsd_result.output }}"
-
-    - name: Grant profile owner ALTER access
-      ibm.ibm_zos_core.zos_tso_command:
-        commands:
-          - >-
-            PERMIT '{{ database_profile.name }}'
-            ID({{ database_profile.owner }})
-            ACCESS(ALTER)
-            GENERIC
-      register: permit_result
-
-    - name: Show PERMIT result
-      ansible.builtin.debug:
-        msg:
-          profile: "{{ database_profile.name }}"
-          user: "{{ database_profile.owner }}"
-          access: ALTER
-          output: "{{ permit_result.output }}"
-
-    - name: Verify generic database profile
-      ibm.ibm_zos_core.zos_tso_command:
-        commands:
-          - >-
-            LISTDSD DATASET('{{ database_profile.name }}')
-            GENERIC
-            ALL
-      register: listdsd_result
-
-    - name: Show LISTDSD result
-      ansible.builtin.debug:
-        msg:
-          profile: "{{ database_profile.name }}"
-          output: "{{ listdsd_result.output }}"
-
     - name: Verify users
       ibm.ibm_zos_core.zos_tso_command:
         commands:
@@ -334,3 +262,4 @@
     - name: Display RACF group report
       ansible.builtin.debug:
         var: racf_group_report
+
