@@ -166,8 +166,7 @@
     - name: Create users
       ibm.ibm_zos_core.zos_tso_command:
         commands:
-          - "ADDUSER {{ item.1 }} PASSWORD({{ item.1 }}) OWNER(GAMA18)"
-          - "ALTUSER {{ item.1 }} TSO(ACCTNUM(ACCT001) PROC(DB13PROC) SIZE(2096128))"
+          - "ADDUSER {{ item.1 }} PASSWORD({{ item.1 }}) OWNER(GAMA18) DFLTGRP({{ item.0.key }}) TSO(ACCTNUM(ACCT001) PROC(DB13PROC) SIZE(2096128))"
       loop: "{{ users | dict2items | subelements('value') }}" # loop over users using key as groups to be added and value as users to be added
       loop_control:
         label: "{{ item.1 }}"
@@ -182,28 +181,6 @@
       loop: "{{ adduser_results.results }}"
       loop_control:
         label: "{{ item.item.1 }}"
-
-    - name: Connect users to required groups
-      ibm.ibm_zos_core.zos_tso_command:
-        commands:
-          - "CONNECT {{ item.1 }} GROUP({{ item.0.key }})"
-      loop: "{{ users | dict2items | subelements('value') }}"
-      loop_control:
-        label: "{{ item.1 }} -> {{ item.0.key }}"
-      register: connect_results
-      failed_when: false
-
-    - name: Show CONNECT results
-      ansible.builtin.debug:
-        msg:
-          membership: "{{ item.item.1 }} -> {{ item.item.0.key }}"
-          output: "{{ item.output | default([]) }}"
-          message: "{{ item.msg | default('') }}"
-          failed: "{{ item.failed | default(false) }}"
-          changed: "{{ item.changed | default(false) }}"
-      loop: "{{ connect_results.results }}"
-      loop_control:
-        label: "{{ item.item.1 }} -> {{ item.item.0.key }}"
 
     - name: Verify RACF groups
       ibm.ibm_zos_core.zos_tso_command:
