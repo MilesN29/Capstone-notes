@@ -8,22 +8,11 @@
 
   environment: "{{ environment_vars }}"
 
+  vars_files:
+    - racf_vars.yml
+
   vars:
-    dataset_profiles:
-      - userid: U03D01
-        access: ALTER
-
-      - userid: U03D02
-        access: ALTER
-
-      - userid: U03T01
-        access: UPDATE
-
-      - userid: P03PTU
-        access: UPDATE
-
-    racf_action: create
-    profile_uacc: NONE
+    racf_action_effective: "{{ racf_action | default('delete') }}"
 
   tasks:
     - name: Delete generic RACF data set profiles
@@ -36,7 +25,7 @@
         label: "{{ item.userid }}.**"
       register: delete_profile_results
       failed_when: false
-      when: racf_action == 'delete'
+      when: racf_action_effective == 'delete'
 
     - name: Show profile deletion results
       ansible.builtin.debug:
@@ -49,13 +38,13 @@
       loop: "{{ delete_profile_results.results | default([]) }}"
       loop_control:
         label: "{{ item.item.userid }}.**"
-      when: racf_action == 'delete'
+      when: racf_action_effective == 'delete'
 
     - name: Refresh generic data set profiles after deletion
       ibm.ibm_zos_core.zos_tso_command:
         commands:
           - "SETROPTS GENERIC(DATASET) REFRESH"
-      when: racf_action == 'delete'
+      when: racf_action_effective == 'delete'
 
     - name: Create generic RACF data set profiles
       ibm.ibm_zos_core.zos_tso_command:
@@ -68,7 +57,7 @@
       loop_control:
         label: "{{ item.userid }}.**"
       register: create_profile_results
-      when: racf_action == 'create'
+      when: racf_action_effective == 'create'
 
     - name: Show profile creation results
       ansible.builtin.debug:
@@ -78,7 +67,7 @@
       loop: "{{ create_profile_results.results | default([]) }}"
       loop_control:
         label: "{{ item.item.userid }}.**"
-      when: racf_action == 'create'
+      when: racf_action_effective == 'create'
 
     - name: Grant users access to their data set profiles
       ibm.ibm_zos_core.zos_tso_command:
@@ -92,7 +81,7 @@
       loop_control:
         label: "{{ item.userid }} -> {{ item.access }}"
       register: permit_results
-      when: racf_action == 'create'
+      when: racf_action_effective == 'create'
 
     - name: Show PERMIT results
       ansible.builtin.debug:
@@ -103,13 +92,13 @@
       loop: "{{ permit_results.results | default([]) }}"
       loop_control:
         label: "{{ item.item.userid }} -> {{ item.item.access }}"
-      when: racf_action == 'create'
+      when: racf_action_effective == 'create'
 
     - name: Refresh generic data set profiles
       ibm.ibm_zos_core.zos_tso_command:
         commands:
           - "SETROPTS GENERIC(DATASET) REFRESH"
-      when: racf_action == 'create'
+      when: racf_action_effective == 'create'
 
     - name: Verify RACF data set profiles
       ibm.ibm_zos_core.zos_tso_command:
@@ -119,7 +108,7 @@
       loop_control:
         label: "{{ item.userid }}.**"
       register: verify_profile_results
-      when: racf_action == 'create'
+      when: racf_action_effective == 'create'
 
     - name: Show LISTDSD results
       ansible.builtin.debug:
@@ -130,4 +119,4 @@
       loop: "{{ verify_profile_results.results | default([]) }}"
       loop_control:
         label: "{{ item.item.userid }}.**"
-      when: racf_action == 'create'
+      when: racf_action_effective == 'create'
